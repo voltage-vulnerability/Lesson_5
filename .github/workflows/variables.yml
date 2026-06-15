@@ -9,7 +9,7 @@ on:
 jobs:
  test_variables:
   env:
-   jOB_VAR: "Job level variable"
+   JOB_VAR: "Job level variable"
   name: job to test variables
   runs-on: ubuntu-latest
   steps:
