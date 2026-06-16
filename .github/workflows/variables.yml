@@ -1,29 +1,72 @@
 name: variables and secrets
 
 env:
- WF_VAR: "WorkFlow level variable"
+  WF_VAR: "WorkFlow level variable"
 
 on:
- push: 
+  push:
 
 jobs:
- test_variables:
-  env:
-   JOB_VAR: "Job level variable"
-  name: job to test variables
-  runs-on: ubuntu-latest
-  steps:
-   - name: test variables
-     id: stepVar
-     env:
-      STEP_VAR: "Step level variable"
-     run: |
-      echo ${{github.actor}}
-      echo $GITHUB_JOB
-      echo $WF_VAR
-      echo $JOB_VAR
-      echo $STEP_VAR
-      echo ${{ vars.CONF_VAR }}
-      echo ${{ secrets.A_SECRET }}
-  
-  
+  test_expressions:
+    name: job to test expressions
+    runs-on: ubuntu-latest 
+    env:
+      aBoolean: false
+      aNull: null
+      aNumber: 42
+      aString: this is a String
+    
+    steps:
+      - name: test null
+        if: env.aNull == 'null' || env.aNull == ''
+        run: echo "this variable is null"
+
+      - name: test boolean
+        # Fixed the "enc" typo and removed unnecessary fromJSON wrap
+        if: env.aBoolean == 'true'
+        run: echo "this job wont run as our variable is false"
+
+      - name: containe function
+        if: contains(env.aString, 'this')
+        run: |
+          echo "our string var contains the word this"
+          echo "But here is a typo that will make this step fail"
+          exit 1 # Forcing a failure cleanly to trigger the next step
+
+      - name: test status check and format funcion
+        if: failure()
+        env:
+          # Fixed the invalid pipe operator symbol inside format()
+          FORMAT_VAR: ${{ format('Github {0} {1} {2}', 'actions', 'is', 'awesome!') }}
+        run: |
+          echo "this step runs a special script to clean up after the failed step"
+          echo "$FORMAT_VAR"
+
+      - name: function and always status check
+        if: startsWith(env.aString, 'this') && always()
+        run: sleep 5 # Lowered sleep time so your pipeline runner doesn't waste time stalling
+
+      - name: test cancle status check
+        if: cancelled()
+        run: echo "this job runs if a workflow is cancelled, it can also be used for clean-up scripts"
+
+  test_variables:
+    # Changed logic to run if it is a push OR if you change it back to a PR event
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    env:
+      JOB_VAR: "Job level variable"
+    name: job to test variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: test variables
+        id: stepVar
+        env:
+          STEP_VAR: "Step level variable"
+        run: |
+          echo "${{ github.actor }}"
+          echo "$GITHUB_JOB"
+          echo "$WF_VAR"
+          echo "$JOB_VAR"
+          echo "$STEP_VAR"
+          echo "${{ vars.CONF_VAR }}"
+          echo "${{ secrets.A_SECRET }}"
