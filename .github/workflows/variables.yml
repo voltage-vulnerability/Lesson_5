@@ -44,7 +44,7 @@ jobs:
 
       - name: function and always status check
         if: startsWith(env.aString, 'this') && always()
-        run: sleep 5 # Lowered sleep time so your pipeline runner doesn't waste time stalling
+        run: sleep 58 # Lowered sleep time so your pipeline runner doesn't waste time stalling
 
       - name: test cancle status check
         if: cancelled()
